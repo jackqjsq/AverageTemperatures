@@ -50,7 +50,7 @@ public class TemperatureService {
             List<CityAverageTemperature> cityAverageTemperatures = this.cityAverageTemperatureRepository.findAllByCityName(cityName);
             for (CityAverageTemperature cityAverageTemperature : cityAverageTemperatures)  {
                 cityAverageTemperatureDTOS.add(new CityAverageTemperatureDTO(cityAverageTemperature.getCityName(),
-                        cityAverageTemperature.getYear(), cityAverageTemperature.getAverageTemperature()));
+                    String.valueOf(cityAverageTemperature.getYear()), cityAverageTemperature.getAverageTemperature()));
             }
         }
         if (cityAverageTemperatureDTOS.isEmpty()) {
@@ -94,7 +94,7 @@ public class TemperatureService {
             this.deleteAllCityAverageTemperatures(cityName);
             for (CityAverageTemperatureDTO cityAverageTemperatureDTO : cityAverageTemperatureDTOS) {
                 this.saveCityAverageTemperature(new CityAverageTemperature(cityAverageTemperatureDTO.getCityName(),
-                        cityAverageTemperatureDTO.getYear(), cityAverageTemperatureDTO.getAverageTemperature()));
+                   Integer.parseInt(cityAverageTemperatureDTO.getYear()), cityAverageTemperatureDTO.getAverageTemperature()));
             }
             this.saveCityCachingDate(new CityCachingDate(cityName, LocalDateTime.now()));
         }

@@ -37,7 +37,7 @@ public class AverageTemperatureCalculation {
             double temperatureSum = this.temperatureSumPerYear.get(year);
             int counter = this.counterPerYear.get(year);
             double truncated = Math.floor((temperatureSum/counter)* 10) / 10;
-            this.cityAverageTemperatureDTOS.add(new CityAverageTemperatureDTO(this.cityName, year, truncated));
+            this.cityAverageTemperatureDTOS.add(new CityAverageTemperatureDTO(this.cityName, String.valueOf(year), truncated));
         }
         return this.cityAverageTemperatureDTOS;
     }

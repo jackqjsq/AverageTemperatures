@@ -6,13 +6,13 @@ public class CityAverageTemperatureDTO {
 
     @JsonIgnore
     private String cityName;
-    private int year;
+    private String year;
     private double averageTemperature;
 
     public CityAverageTemperatureDTO() {
     }
 
-    public CityAverageTemperatureDTO(String cityName, int year, double averageTemperature) {
+    public CityAverageTemperatureDTO(String cityName, String year, double averageTemperature) {
         this.cityName = cityName;
         this.year = year;
         this.averageTemperature = averageTemperature;
@@ -22,7 +22,7 @@ public class CityAverageTemperatureDTO {
         return cityName;
     }
 
-    public int getYear() {
+    public String getYear() {
         return year;
     }
 
