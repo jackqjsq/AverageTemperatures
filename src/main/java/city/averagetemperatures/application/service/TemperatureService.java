@@ -1,7 +1,7 @@
 package city.averagetemperatures.application.service;
 
 import city.averagetemperatures.application.calculation.AverageTemperatureCalculation;
-import city.averagetemperatures.application.dao.CSVDataReaderDao;
+import city.averagetemperatures.application.dao.DataReaderDao;
 import city.averagetemperatures.application.dto.CityAverageTemperatureDTO;
 import city.averagetemperatures.application.entity.CityAverageTemperature;
 import city.averagetemperatures.application.entity.CityCachingDate;
@@ -21,10 +21,10 @@ public class TemperatureService {
 
     private CityCachingDateRepository cityCachingDateRepository;
     private CityAverageTemperatureRepository cityAverageTemperatureRepository;
-    private CSVDataReaderDao csvDataReaderDao;
+    private DataReaderDao dataReaderDao;
 
-    public TemperatureService(CSVDataReaderDao csvDataReaderDao) {
-        this.csvDataReaderDao = csvDataReaderDao;
+    public TemperatureService(DataReaderDao dataReaderDao) {
+        this.dataReaderDao = dataReaderDao;
     }
 
     public void saveCityCachingDate(CityCachingDate cityCachingDate) {
@@ -44,8 +44,8 @@ public class TemperatureService {
      */
     public List<CityAverageTemperatureDTO> findAverageTemperaturesByCity(String cityName) {
         List<CityAverageTemperatureDTO> cityAverageTemperatureDTOS = new ArrayList<>();
-        if (this.isFileReadingNecessary(cityName)) {
-            cityAverageTemperatureDTOS = this.processFileData(cityName);
+        if (this.isExternalDataSourceReadingNecessary(cityName)) {
+            cityAverageTemperatureDTOS = this.processData(cityName);
         } else {
             List<CityAverageTemperature> cityAverageTemperatures = this.cityAverageTemperatureRepository.findAllByCityName(cityName);
             for (CityAverageTemperature cityAverageTemperature : cityAverageTemperatures)  {
@@ -60,19 +60,27 @@ public class TemperatureService {
     }
 
     /**
-     * If city temperature data is not cached, it needs to be read from csv file.
-     * If csv file modification date is newer than cached data, it will be refreshed from file
+     * If city temperature data is not cached, it needs to be read from external data source.
+     * If external data source modification date is newer than cached data, it will be refreshed from external one
      */
-    private boolean isFileReadingNecessary(String cityName) {
+    private boolean isExternalDataSourceReadingNecessary(String cityName) {
         boolean reading = false;
-        if (!this.isCityAverageTemperatureCached(cityName)) {
+        boolean externalDataSourceAvailable = this.dataReaderDao.externalDataSourceAvailable();
+        boolean cityDataCached = this.isCityAverageTemperatureCached(cityName);
+        if (!externalDataSourceAvailable && !cityDataCached) {
+            throw new CityNotFoundException("city not found: " + cityName);
+        }
+        if (externalDataSourceAvailable && !cityDataCached) {
             return true;
         }
-        LocalDateTime fileLastModifiedTime = this.csvDataReaderDao.getFileLastModifiedTime();
-        Optional<CityCachingDate> cityCachingDateOptinal = this.cityCachingDateRepository.findById(cityName);
-        if (cityCachingDateOptinal.isPresent()) {
-            LocalDateTime cachingDate = cityCachingDateOptinal.get().getCachingDate();
-            if (fileLastModifiedTime.isAfter(cachingDate)) {
+        if (!externalDataSourceAvailable && cityDataCached) {
+            return false;
+        }
+        LocalDateTime externalDataLastModifiedTime = this.dataReaderDao.getExternalDataLastModifiedTime();
+        Optional<CityCachingDate> cityCachingDateOptional = this.cityCachingDateRepository.findById(cityName);
+        if (cityCachingDateOptional.isPresent()) {
+            LocalDateTime cachingDate = cityCachingDateOptional.get().getCachingDate();
+            if (externalDataLastModifiedTime.isAfter(cachingDate)) {
                 return true;
             }
         }
@@ -84,17 +92,17 @@ public class TemperatureService {
     }
 
     /**
-     * Method reads data from csv file, calculates average year values, prepares list for response
+     * Method reads data from data source, calculates average year values, prepares list for response
     */
-    private List<CityAverageTemperatureDTO> processFileData(String cityName) {
+    private List<CityAverageTemperatureDTO> processData(String cityName) {
         List<CityAverageTemperatureDTO> cityAverageTemperatureDTOS = new ArrayList<>();
-        AverageTemperatureCalculation averageTemperatureCalculation = this.csvDataReaderDao.readCityData(cityName);
+        AverageTemperatureCalculation averageTemperatureCalculation = this.dataReaderDao.readCityData(cityName);
         cityAverageTemperatureDTOS = averageTemperatureCalculation.calculateAverageTemperature();
         if (!cityAverageTemperatureDTOS.isEmpty()) {
             this.deleteAllCityAverageTemperatures(cityName);
             for (CityAverageTemperatureDTO cityAverageTemperatureDTO : cityAverageTemperatureDTOS) {
                 this.saveCityAverageTemperature(new CityAverageTemperature(cityAverageTemperatureDTO.getCityName(),
-                   Integer.parseInt(cityAverageTemperatureDTO.getYear()), cityAverageTemperatureDTO.getAverageTemperature()));
+                   Short.parseShort(cityAverageTemperatureDTO.getYear()), cityAverageTemperatureDTO.getAverageTemperature()));
             }
             this.saveCityCachingDate(new CityCachingDate(cityName, LocalDateTime.now()));
         }

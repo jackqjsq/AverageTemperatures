@@ -10,13 +10,13 @@ public class CityAverageTemperature {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String cityName;
-    private int year;
+    private short year;
     private double averageTemperature;
 
     public CityAverageTemperature() {
     }
 
-    public CityAverageTemperature(String cityName, int year, double averageTemperature) {
+    public CityAverageTemperature(String cityName, short year, double averageTemperature) {
         this.cityName = cityName;
         this.year = year;
         this.averageTemperature = averageTemperature;
@@ -34,7 +34,7 @@ public class CityAverageTemperature {
         return cityName;
     }
 
-    public int getYear() {
+    public short getYear() {
         return year;
     }
 
@@ -46,7 +46,7 @@ public class CityAverageTemperature {
         this.cityName = cityName;
     }
 
-    public void setYear(int year) {
+    public void setYear(short year) {
         this.year = year;
     }
 
